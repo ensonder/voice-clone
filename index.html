@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🎙️ VoiceCraft Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --yellow: #FFE566;
+    --pink: #FF6B9D;
+    --blue: #4ECDC4;
+    --purple: #A855F7;
+    --orange: #FF8C42;
+    --green: #6BCB77;
+    --dark: #1a1a2e;
+    --card: #ffffff;
+    --shadow: 4px 4px 0px #1a1a2e;
+    --shadow-lg: 6px 6px 0px #1a1a2e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--yellow);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(circle at 10% 20%, #FF6B9D33 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, #4ECDC433 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, #A855F722 0%, transparent 60%);
+  }
+
+  /* floating blobs */
+  .blob {
+    position: fixed;
+    border-radius: 50%;
+    opacity: 0.15;
+    animation: float 8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .blob1 { width:300px; height:300px; background:var(--pink); top:-100px; left:-100px; animation-delay:0s; }
+  .blob2 { width:200px; height:200px; background:var(--blue); bottom:-50px; right:-50px; animation-delay:3s; }
+  .blob3 { width:150px; height:150px; background:var(--purple); top:50%; right:5%; animation-delay:1.5s; }
+
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+  }
+
+  header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .logo {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    color: var(--dark);
+    text-shadow: 4px 4px 0 var(--pink);
+    display: inline-block;
+    animation: wiggle 3s ease-in-out infinite;
+  }
+
+  @keyframes wiggle {
+    0%,100% { transform: rotate(-1deg); }
+    50% { transform: rotate(1deg); }
+  }
+
+  .tagline {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    opacity: 0.7;
+    margin-top: 6px;
+  }
+
+  .stars {
+    font-size: 1.5rem;
+    letter-spacing: 4px;
+    margin-top: 4px;
+  }
+
+  /* COLAB URL banner */
+  .colab-banner {
+    max-width: 700px;
+    margin: 0 auto 24px;
+    padding: 0 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .colab-card {
+    background: var(--dark);
+    border: 3px solid var(--dark);
+    border-radius: 20px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .colab-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+  }
+
+  .colab-label {
+    font-family: 'Fredoka One', cursive;
+    color: var(--yellow);
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .colab-input {
+    flex: 1;
+    min-width: 200px;
+    background: #2a2a4e;
+    border: 2px solid #4a4a6e;
+    border-radius: 12px;
+    padding: 8px 14px;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .colab-input:focus { border-color: var(--blue); }
+  .colab-input::placeholder { color: #6a6a8e; }
+
+  .status-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #666;
+    flex-shrink: 0;
+    transition: background 0.3s;
+    box-shadow: 0 0 0 3px #33334a;
+  }
+  .status-dot.connected { background: var(--green); box-shadow: 0 0 0 3px #1a3a1a, 0 0 10px var(--green); animation: pulse 2s infinite; }
+  .status-dot.error { background: var(--pink); }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* main layout */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 16px 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 3px solid var(--dark);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--dark); }
+
+  .card-full { grid-column: 1 / -1; }
+
+  .card-title {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    color: var(--dark);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    border: 2px solid var(--dark);
+  }
+
+  label {
+    display: block;
+    font-weight: 800;
+    font-size: 0.85rem;
+    color: var(--dark);
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], textarea, select {
+    width: 100%;
+    border: 3px solid var(--dark);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: #FAFAFA;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    color: var(--dark);
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--purple);
+    box-shadow: 3px 3px 0 var(--purple);
+  }
+
+  textarea { resize: vertical; min-height: 100px; }
+
+  select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231a1a2e' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  /* mode tabs */
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    border: 3px solid var(--dark);
+    border-radius: 14px;
+    padding: 8px 18px;
+    cursor: pointer;
+    background: white;
+    color: var(--dark);
+    box-shadow: 3px 3px 0 var(--dark);
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--dark); }
+  .tab-btn.active { transform: translate(2px,2px); box-shadow: none; }
+  .tab-btn.t-custom.active { background: var(--blue); }
+  .tab-btn.t-clone.active { background: var(--pink); }
+  .tab-btn.t-design.active { background: var(--purple); color: white; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* file upload */
+  .upload-zone {
+    border: 3px dashed var(--dark);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #FAFAFA;
+    transition: background 0.2s, border-color 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.dragover { background: #FFF5E0; border-color: var(--orange); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 2.5rem; display: block; }
+  .upload-text { font-weight: 800; color: var(--dark); margin-top: 6px; font-size: 0.9rem; }
+  .upload-sub { font-size: 0.78rem; color: #888; margin-top: 2px; }
+  .upload-name { font-size: 0.85rem; font-weight: 700; color: var(--green); margin-top: 8px; }
+
+  /* speaker grid */
+  .speaker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  @media (max-width: 400px) { .speaker-grid { grid-template-columns: repeat(2,1fr); } }
+
+  .speaker-btn {
+    border: 3px solid var(--dark);
+    border-radius: 14px;
+    padding: 10px 8px;
+    cursor: pointer;
+    background: white;
+    text-align: center;
+    transition: all 0.15s;
+    box-shadow: 3px 3px 0 var(--dark);
+  }
+  .speaker-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--dark); }
+  .speaker-btn.active { transform: translate(2px,2px); box-shadow: none; background: var(--yellow); }
+  .speaker-emoji { font-size: 1.4rem; display: block; }
+  .speaker-name { font-weight: 800; font-size: 0.78rem; display: block; margin-top: 2px; color: var(--dark); }
+  .speaker-lang { font-size: 0.65rem; color: #888; font-weight: 600; }
+
+  /* generate button */
+  .generate-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    background: var(--pink);
+    color: white;
+    border: 3px solid var(--dark);
+    border-radius: 18px;
+    cursor: pointer;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .generate-btn:hover:not(:disabled) { transform: translate(-2px,-2px); box-shadow: 8px 8px 0 var(--dark); }
+  .generate-btn:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--dark); }
+  .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .generate-btn.loading { background: var(--purple); }
+
+  /* progress */
+  .progress-bar-wrap {
+    width: 100%;
+    height: 12px;
+    background: #eee;
+    border: 2px solid var(--dark);
+    border-radius: 999px;
+    margin-top: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  .progress-bar-wrap.show { display: block; }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pink), var(--purple), var(--blue));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 999px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+  @keyframes shimmer { 0%{background-position:0% 0%} 100%{background-position:200% 0%} }
+
+  /* output */
+  .output-card {
+    background: var(--dark);
+    border: 3px solid var(--dark);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: var(--shadow-lg);
+    display: none;
+    animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .output-card.show { display: block; }
+
+  @keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .output-title {
+    font-family: 'Fredoka One', cursive;
+    color: var(--yellow);
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  audio {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--green);
+    color: var(--dark);
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    border: 3px solid var(--yellow);
+    border-radius: 14px;
+    text-decoration: none;
+    box-shadow: 3px 3px 0 var(--yellow);
+    transition: all 0.15s;
+    cursor: pointer;
+  }
+  .download-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 var(--yellow); }
+
+  .log-box {
+    background: #0d0d1a;
+    border: 2px solid #333;
+    border-radius: 12px;
+    padding: 12px;
+    margin-top: 14px;
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: #aaa;
+    max-height: 120px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .log-box .ok { color: var(--green); }
+  .log-box .err { color: var(--pink); }
+  .log-box .info { color: var(--blue); }
+
+  /* colab instructions */
+  .instructions {
+    background: #fffbe6;
+    border: 3px solid var(--dark);
+    border-radius: 20px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .instructions h3 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    color: var(--dark);
+    margin-bottom: 10px;
+  }
+  .step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    background: var(--orange);
+    border: 2px solid var(--dark);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .step p { font-size: 0.85rem; font-weight: 600; color: #333; padding-top: 2px; }
+  .step code {
+    background: #ffe0a0;
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 1px solid #e0c060;
+  }
+
+  /* range slider */
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--purple);
+    cursor: pointer;
+    height: 6px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
+  }
+  .range-row { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 700; color: #888; margin-top: 2px; }
+
+  /* confetti burst */
+  .confetti-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; }
+  .confetti-piece {
+    position: absolute;
+    width: 10px; height: 10px;
+    opacity: 0;
+    animation: confettiFall 2s ease-in forwards;
+    border-radius: 2px;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<header>
+  <div class="logo">🎙️ VoiceCraft Studio</div>
+  <div class="tagline">Powered by Qwen3-TTS — running on your Google Colab!</div>
+  <div class="stars">⭐ ✨ 🌟 ✨ ⭐</div>
+</header>
+
+<div class="colab-banner">
+  <div class="colab-card">
+    <span class="colab-icon">🔗</span>
+    <span class="colab-label">Colab URL</span>
+    <input class="colab-input" id="colabUrl" type="text" placeholder="https://your-ngrok-url.ngrok.io" />
+    <div class="status-dot" id="statusDot" title="Not connected"></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- instructions -->
+  <div class="instructions">
+    <h3>🚀 How to Connect Your Colab</h3>
+    <div class="step"><div class="step-num">1</div><p>Open Google Colab and run the <strong>backend cell</strong> below (copy from the code panel)</p></div>
+    <div class="step"><div class="step-num">2</div><p>Install ngrok: <code>!pip install pyngrok</code> then run the server cell</p></div>
+    <div class="step"><div class="step-num">3</div><p>Copy the <strong>ngrok URL</strong> that appears and paste it above 👆</p></div>
+    <div class="step"><div class="step-num">4</div><p>Start making voices! 🎉</p></div>
+  </div>
+
+  <!-- colab backend code -->
+  <div class="card card-full" style="margin-bottom:20px;">
+    <div class="card-title">📋 Colab Backend Code <span class="pill" style="background:var(--yellow)">Copy & Run in Colab</span></div>
+    <div class="log-box" style="max-height:220px; font-size:0.72rem; color:#ccc; white-space:pre;">
+<span class="info"># ===== CELL 1: Install =====</span>
+!pip install -U qwen-tts soundfile huggingface_hub transformers tokenizers flask pyngrok
+
+<span class="info"># ===== CELL 2: Download Models =====</span>
+from huggingface_hub import snapshot_download
+snapshot_download(repo_id="Qwen/Qwen3-TTS-Tokenizer-12Hz", local_dir="./Qwen3-TTS-Tokenizer-12Hz")
+snapshot_download(repo_id="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice", local_dir="./Qwen3-TTS-12Hz-1.7B-CustomVoice")
+snapshot_download(repo_id="Qwen/Qwen3-TTS-12Hz-1.7B-Base", local_dir="./Qwen3-TTS-12Hz-1.7B-Base")
+
+<span class="info"># ===== CELL 3: Start Server =====</span>
+import torch, base64, io, threading
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from pyngrok import ngrok
+import soundfile as sf
+from qwen_tts import Qwen3TTSModel
+import numpy as np
+
+app = Flask(__name__)
+CORS(app)
+
+print("Loading CustomVoice model...")
+custom_model = Qwen3TTSModel.from_pretrained(
+    "./Qwen3-TTS-12Hz-1.7B-CustomVoice",
+    device_map="cuda:0", dtype=torch.bfloat16)
+
+print("Loading Base (clone) model...")
+clone_model = Qwen3TTSModel.from_pretrained(
+    "./Qwen3-TTS-12Hz-1.7B-Base",
+    device_map="cuda:0", dtype=torch.bfloat16)
+
+def wav_to_base64(wav, sr):
+    buf = io.BytesIO()
+    sf.write(buf, wav, sr, format='WAV')
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode()
+
+@app.route('/health', methods=['GET'])
+def health(): return jsonify({"status": "ok", "message": "VoiceCraft is ready!"})
+
+@app.route('/custom', methods=['POST'])
+def custom():
+    d = request.json
+    wavs, sr = custom_model.generate_custom_voice(
+        text=d.get('text','Hello world'),
+        language=d.get('language','English'),
+        speaker=d.get('speaker','Ryan'),
+        instruct=d.get('instruct','') or None)
+    return jsonify({"audio": wav_to_base64(wavs[0], sr), "sr": sr})
+
+@app.route('/clone', methods=['POST'])
+def clone():
+    d = request.json
+    audio_bytes = base64.b64decode(d['ref_audio'])
+    buf = io.BytesIO(audio_bytes)
+    import soundfile as sf2
+    wav_data, wav_sr = sf2.read(buf)
+    wavs, sr = clone_model.generate_voice_clone(
+        text=d.get('text','Hello world'),
+        language=d.get('language','English'),
+        ref_audio=(wav_data, wav_sr),
+        ref_text=d.get('ref_text',''))
+    return jsonify({"audio": wav_to_base64(wavs[0], sr), "sr": sr})
+
+@app.route('/design', methods=['POST'])
+def design():
+    d = request.json
+    wavs, sr = custom_model.generate_custom_voice(
+        text=d.get('text','Hello world'),
+        language=d.get('language','English'),
+        speaker=d.get('speaker','Ryan'),
+        instruct=d.get('instruct',''))
+    return jsonify({"audio": wav_to_base64(wavs[0], sr), "sr": sr})
+
+ngrok.set_auth_token("YOUR_NGROK_TOKEN_HERE")  # get free token at ngrok.com
+tunnel = ngrok.connect(5000)
+print(f"\n🎉 YOUR URL: {tunnel.public_url}\n")
+print("Paste this URL into VoiceCraft Studio!")
+
+threading.Thread(target=lambda: app.run(port=5000)).start()
+    </div>
+    <button onclick="copyCode()" style="margin-top:10px; background:var(--blue); border:3px solid var(--dark); border-radius:12px; padding:8px 18px; font-family:'Fredoka One',cursive; font-size:1rem; cursor:pointer; box-shadow:3px 3px 0 var(--dark); transition:all 0.15s;" onmouseover="this.style.transform='translate(-1px,-1px)'" onmouseout="this.style.transform=''">📋 Copy Code</button>
+  </div>
+
+  <!-- mode tabs -->
+  <div class="mode-tabs">
+    <button class="tab-btn t-custom active" onclick="switchTab('custom')">🎭 Custom Voice</button>
+    <button class="tab-btn t-clone" onclick="switchTab('clone')">🧬 Voice Clone</button>
+    <button class="tab-btn t-design" onclick="switchTab('design')">🎨 Voice Design</button>
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT: input panels -->
+    <div>
+
+      <!-- CUSTOM VOICE -->
+      <div id="tab-custom" class="tab-panel active">
+        <div class="card">
+          <div class="card-title">🎭 Custom Voice <span class="pill" style="background:var(--blue)">9 Speakers</span></div>
+
+          <label>Choose Speaker</label>
+          <div class="speaker-grid" id="speakerGrid">
+            <!-- filled by JS -->
+          </div>
+
+          <label>Text to Speak</label>
+          <textarea id="customText" placeholder="Type anything you want the voice to say...">Hello! Welcome to VoiceCraft Studio. This is pretty cool!</textarea>
+
+          <label>Language</label>
+          <select id="customLang">
+            <option>English</option><option>Chinese</option><option>Japanese</option>
+            <option>Korean</option><option>German</option><option>French</option>
+            <option>Spanish</option><option>Portuguese</option><option>Italian</option><option>Russian</option>
+          </select>
+
+          <label>Style / Emotion Instruction <span style="font-weight:400;color:#888;">(optional)</span></label>
+          <input type="text" id="customInstruct" placeholder="e.g. Speak like an excited news anchor!" />
+
+          <button class="generate-btn" id="generateCustom" onclick="generateCustom()">
+            <span id="customBtnText">🎙️ Generate Voice!</span>
+          </button>
+          <div class="progress-bar-wrap" id="customProgress"><div class="progress-bar" id="customBar"></div></div>
+        </div>
+      </div>
+
+      <!-- CLONE VOICE -->
+      <div id="tab-clone" class="tab-panel">
+        <div class="card">
+          <div class="card-title">🧬 Voice Clone <span class="pill" style="background:var(--pink)">Upload Audio</span></div>
+
+          <label>Reference Audio <span style="font-weight:400;color:#888;">(3–10 sec, clean speech)</span></label>
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="refAudio" accept=".wav,.mp3,.ogg" onchange="handleFileUpload(event)" />
+            <span class="upload-icon">🎵</span>
+            <div class="upload-text">Drop your audio file here</div>
+            <div class="upload-sub">WAV, MP3, OGG • 3–10 seconds recommended</div>
+            <div class="upload-name" id="uploadName"></div>
+          </div>
+
+          <label>Reference Text <span style="font-weight:400;color:#888;">(what they say in the audio)</span></label>
+          <input type="text" id="refText" placeholder="Exact words spoken in the reference audio..." />
+
+          <label>Text to Generate</label>
+          <textarea id="cloneText" placeholder="Type the new words you want in the cloned voice...">This is my cloned voice saying something completely new!</textarea>
+
+          <label>Language</label>
+          <select id="cloneLang">
+            <option>English</option><option>Chinese</option><option>Japanese</option>
+            <option>Korean</option><option>German</option><option>French</option>
+            <option>Spanish</option><option>Portuguese</option><option>Italian</option><option>Russian</option>
+          </select>
+
+          <button class="generate-btn" id="generateClone" onclick="generateClone()" style="background:var(--pink);">
+            <span id="cloneBtnText">🧬 Clone Voice!</span>
+          </button>
+          <div class="progress-bar-wrap" id="cloneProgress"><div class="progress-bar" id="cloneBar"></div></div>
+        </div>
+      </div>
+
+      <!-- VOICE DESIGN -->
+      <div id="tab-design" class="tab-panel">
+        <div class="card">
+          <div class="card-title">🎨 Voice Design <span class="pill" style="background:var(--purple);color:white;">AI Styled</span></div>
+
+          <label>Text to Speak</label>
+          <textarea id="designText" placeholder="Type the words to speak...">The adventure begins now. Are you ready for what comes next?</textarea>
+
+          <label>Voice Description</label>
+          <textarea id="designInstruct" placeholder="Describe the voice in detail... e.g. Deep dramatic male narrator, slow and intense, like a movie trailer voiceover." style="min-height:80px;"></textarea>
+
+          <label>Speaker Base</label>
+          <select id="designSpeaker">
+            <option value="Ryan">Ryan (English Male)</option>
+            <option value="Aiden">Aiden (English Male)</option>
+            <option value="Vivian">Vivian (Chinese Female)</option>
+            <option value="Serena">Serena (Chinese Female)</option>
+            <option value="Uncle_Fu">Uncle Fu (Chinese Male)</option>
+            <option value="Ono_Anna">Ono Anna (Japanese Female)</option>
+            <option value="Sohee">Sohee (Korean Female)</option>
+          </select>
+
+          <label>Language</label>
+          <select id="designLang">
+            <option>English</option><option>Chinese</option><option>Japanese</option>
+            <option>Korean</option><option>German</option><option>French</option>
+            <option>Spanish</option><option>Portuguese</option><option>Italian</option><option>Russian</option>
+          </select>
+
+          <button class="generate-btn" id="generateDesign" onclick="generateDesign()" style="background:var(--purple);">
+            <span id="designBtnText">🎨 Design Voice!</span>
+          </button>
+          <div class="progress-bar-wrap" id="designProgress"><div class="progress-bar" id="designBar"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: output + log -->
+    <div>
+      <div class="output-card" id="outputCard">
+        <div class="output-title">🎉 Your Audio is Ready!</div>
+        <audio id="audioPlayer" controls></audio>
+        <br/>
+        <a class="download-btn" id="downloadBtn" download="voicecraft_output.wav">⬇️ Download WAV</a>
+        <div class="log-box" id="logBox" style="margin-top:14px;">
+          <span class="info">Waiting for generation...</span>
+        </div>
+      </div>
+
+      <div class="card" id="idleCard" style="margin-top: 0;">
+        <div class="card-title">💡 Tips & Tricks</div>
+        <div style="font-size:0.85rem; line-height:1.7; color:#444; font-weight:600;">
+          <p>🎭 <strong>Custom Voice:</strong> Add an <em>instruct</em> like "speak like a pirate" or "very slowly and dramatically"</p>
+          <br/>
+          <p>🧬 <strong>Voice Clone:</strong> Use a clean, noise-free recording. The <em>ref text</em> must exactly match what's spoken.</p>
+          <br/>
+          <p>🎨 <strong>Voice Design:</strong> Be super detailed in your description — age, gender, emotion, pace, accent!</p>
+          <br/>
+          <p>🌍 Always match the <strong>Language</strong> field to the language you're typing in.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-title">📊 Session Log</div>
+        <div class="log-box" id="sessionLog" style="max-height:180px;">
+          <span class="info">Session started. Waiting for Colab connection...<br/></span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="confetti-container" id="confettiContainer"></div>
+
+<script>
+const speakers = [
+  { name: "Ryan",      emoji: "🧑",  lang: "English",  val: "Ryan" },
+  { name: "Aiden",     emoji: "👨",  lang: "English",  val: "Aiden" },
+  { name: "Vivian",    emoji: "👩",  lang: "Chinese",  val: "Vivian" },
+  { name: "Serena",    emoji: "🧕",  lang: "Chinese",  val: "Serena" },
+  { name: "Uncle Fu",  emoji: "👴",  lang: "Chinese",  val: "Uncle_Fu" },
+  { name: "Dylan",     emoji: "🧒",  lang: "Beijing",  val: "Dylan" },
+  { name: "Eric",      emoji: "😄",  lang: "Sichuan",  val: "Eric" },
+  { name: "Ono Anna",  emoji: "🎎",  lang: "Japanese", val: "Ono_Anna" },
+  { name: "Sohee",     emoji: "🌸",  lang: "Korean",   val: "Sohee" },
+];
+
+let selectedSpeaker = "Ryan";
+let uploadedFile = null;
+
+// Build speaker grid
+const grid = document.getElementById('speakerGrid');
+speakers.forEach(s => {
+  const btn = document.createElement('div');
+  btn.className = 'speaker-btn' + (s.val === selectedSpeaker ? ' active' : '');
+  btn.innerHTML = `<span class="speaker-emoji">${s.emoji}</span><span class="speaker-name">${s.name}</span><span class="speaker-lang">${s.lang}</span>`;
+  btn.onclick = () => {
+    document.querySelectorAll('.speaker-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedSpeaker = s.val;
+  };
+  grid.appendChild(btn);
+});
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelector('.t-' + tab).classList.add('active');
+}
+
+function getColabUrl() {
+  let url = document.getElementById('colabUrl').value.trim();
+  if (!url) { log('err', '❌ Please enter your Colab ngrok URL!'); return null; }
+  if (url.endsWith('/')) url = url.slice(0,-1);
+  return url;
+}
+
+function log(type, msg) {
+  const box = document.getElementById('sessionLog');
+  const line = document.createElement('span');
+  line.className = type;
+  line.innerHTML = msg + '<br/>';
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function setProgress(id, val) {
+  document.getElementById(id+'Progress').classList.toggle('show', val > 0 && val < 100);
+  document.getElementById(id+'Bar').style.width = val + '%';
+}
+
+function showOutput(base64Audio) {
+  const blob = b64ToBlob(base64Audio, 'audio/wav');
+  const url = URL.createObjectURL(blob);
+  document.getElementById('audioPlayer').src = url;
+  document.getElementById('downloadBtn').href = url;
+  document.getElementById('outputCard').classList.add('show');
+  document.getElementById('idleCard').style.display = 'none';
+  launchConfetti();
+  log('ok', '✅ Audio generated successfully!');
+}
+
+function b64ToBlob(b64, mime) {
+  const bytes = atob(b64);
+  const arr = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+async function generateCustom() {
+  const url = getColabUrl(); if (!url) return;
+  const btn = document.getElementById('generateCustom');
+  const text = document.getElementById('customText').value.trim();
+  if (!text) { log('err', '❌ Please enter some text!'); return; }
+
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('customBtnText').textContent = '⏳ Generating...';
+  setProgress('custom', 30);
+  log('info', `🎭 Generating with ${selectedSpeaker}...`);
+
+  try {
+    setProgress('custom', 60);
+    const res = await fetch(url + '/custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text, speaker: selectedSpeaker,
+        language: document.getElementById('customLang').value,
+        instruct: document.getElementById('customInstruct').value
+      })
+    });
+    const data = await res.json();
+    setProgress('custom', 100);
+    showOutput(data.audio);
+  } catch(e) {
+    log('err', '❌ Error: ' + e.message);
+    setStatusDot('error');
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+    document.getElementById('customBtnText').textContent = '🎙️ Generate Voice!';
+    setTimeout(() => setProgress('custom', 0), 500);
+  }
+}
+
+async function generateClone() {
+  const url = getColabUrl(); if (!url) return;
+  if (!uploadedFile) { log('err', '❌ Please upload a reference audio file!'); return; }
+  const refText = document.getElementById('refText').value.trim();
+  if (!refText) { log('err', '❌ Please enter the reference text!'); return; }
+  const text = document.getElementById('cloneText').value.trim();
+  if (!text) { log('err', '❌ Please enter text to generate!'); return; }
+
+  const btn = document.getElementById('generateClone');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('cloneBtnText').textContent = '⏳ Cloning...';
+  setProgress('clone', 30);
+  log('info', '🧬 Cloning voice from reference audio...');
+
+  try {
+    // Read file as ArrayBuffer then convert to clean base64 (no data: prefix)
+    const arrayBuffer = await uploadedFile.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < uint8Array.length; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    const b64 = btoa(binary);
+
+    setProgress('clone', 60);
+    const res = await fetch(url + '/clone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text, ref_text: refText, ref_audio: b64,
+        language: document.getElementById('cloneLang').value,
+      })
+    });
+    const data = await res.json();
+    if (data.error) { log('err', '❌ ' + data.error); return; }
+    setProgress('clone', 100);
+    showOutput(data.audio);
+  } catch(e) {
+    log('err', '❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+    document.getElementById('cloneBtnText').textContent = '🧬 Clone Voice!';
+    setTimeout(() => setProgress('clone', 0), 500);
+  }
+}
+
+async function generateDesign() {
+  const url = getColabUrl(); if (!url) return;
+  const text = document.getElementById('designText').value.trim();
+  const instruct = document.getElementById('designInstruct').value.trim();
+  if (!text) { log('err', '❌ Please enter text!'); return; }
+  if (!instruct) { log('err', '❌ Please describe the voice!'); return; }
+
+  const btn = document.getElementById('generateDesign');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('designBtnText').textContent = '⏳ Designing...';
+  setProgress('design', 40);
+  log('info', '🎨 Designing custom voice...');
+
+  try {
+    const res = await fetch(url + '/design', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text, instruct,
+        speaker: document.getElementById('designSpeaker').value,
+        language: document.getElementById('designLang').value,
+      })
+    });
+    const data = await res.json();
+    setProgress('design', 100);
+    showOutput(data.audio);
+  } catch(e) {
+    log('err', '❌ Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+    document.getElementById('designBtnText').textContent = '🎨 Design Voice!';
+    setTimeout(() => setProgress('design', 0), 500);
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  uploadedFile = file;
+  document.getElementById('uploadName').textContent = '✅ ' + file.name;
+  log('ok', '📁 Uploaded: ' + file.name);
+}
+
+// Drag and drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault(); zone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) { uploadedFile = file; document.getElementById('uploadName').textContent = '✅ ' + file.name; }
+});
+
+// Status dot + health check
+function setStatusDot(state) {
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot ' + state;
+}
+
+async function checkHealth() {
+  const url = document.getElementById('colabUrl').value.trim();
+  if (!url) return;
+  try {
+    const res = await fetch(url.replace(/\/$/, '') + '/health', { signal: AbortSignal.timeout(5000) });
+    if (res.ok) { setStatusDot('connected'); log('ok', '🟢 Connected to Colab!'); }
+    else { setStatusDot('error'); }
+  } catch { setStatusDot('error'); }
+}
+
+document.getElementById('colabUrl').addEventListener('change', checkHealth);
+document.getElementById('colabUrl').addEventListener('blur', checkHealth);
+
+// Confetti
+function launchConfetti() {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#FFE566','#FF6B9D','#4ECDC4','#A855F7','#FF8C42','#6BCB77'];
+  for (let i = 0; i < 60; i++) {
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.top = '-20px';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.width = (Math.random()*10+5) + 'px';
+    p.style.height = (Math.random()*10+5) + 'px';
+    p.style.animationDelay = Math.random() * 1 + 's';
+    p.style.animationDuration = (Math.random()*1+1.5) + 's';
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 3000);
+  }
+}
+
+function copyCode() {
+  const code = document.querySelector('.log-box').innerText;
+  navigator.clipboard.writeText(code).then(() => alert('✅ Code copied! Paste it into Colab.'));
+}
+</script>
+</body>
+</html>
